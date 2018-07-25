@@ -54,7 +54,7 @@ function getItem(projectId, versionId, itemId, fileName, oauthClient, credential
                         submitWorkItem(ossUrl, bucketURL, oauthClient, credentials).then(function (workItemResp) {
                             console.log("*** workitem post response:", workItemResp.body);
                             var workItemId = workItemResp.body.Id;
-                            getWorkItemStatus(workItemId, credentials, function (status, workitemResult) {
+                            getWorkItemStatus(workItemId, credentials, res, function (status, workitemResult) {
                                 var report = "";
                                 if (status) {
                                     // Process the output from the workitem on success
@@ -69,7 +69,11 @@ function getItem(projectId, versionId, itemId, fileName, oauthClient, credential
                                         .then(function (attachmentVersionId) {
                                             attachVersionToAnotherVersion(projectId, versionId, attachmentVersionId, oauthClient, credentials)
                                                 .then(function () {
-                                                    res.json({ fileName: uploadedPdfName, objectId: objectId });
+                                                    //res.json({ fileName: uploadedPdfName, objectId: objectId });
+                                                    // since we are already using res.write() to keep the connection alive
+                                                    // we cannot use res.json that would try to set the header again, only res.write/end
+                                                    res.write(JSON.stringify({ fileName: uploadedPdfName, objectId: objectId }));
+                                                    res.end();
                                                     return;
                                                 })
                                                 .catch(function (error) {
@@ -512,7 +516,7 @@ var asyncLoop = function (o) {
 // The function polls the workitem status, in a while loop, 
 // the loop breaks on success or error. 
 //
-function getWorkItemStatus(workitemId, credentials, callback) {
+function getWorkItemStatus(workitemId, credentials, res, callback) {
     var request = require("request");
     var workitemstatusurl = "https://developer.api.autodesk.com//autocad.io/us-east/v2/WorkItems";
     var _url = workitemstatusurl + "(%27" + workitemId + "%27)"; /*"?workitemid=" + encodeURIComponent(workitemId);*/
@@ -546,6 +550,10 @@ function getWorkItemStatus(workitemId, credentials, callback) {
                         callback(false, result);
                     }
                 });
+
+                // Keep writing to the client to keep the connection alive
+                res.write(' ');
+
             }, 2000);
         }
     });
