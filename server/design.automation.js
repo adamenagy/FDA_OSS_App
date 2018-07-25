@@ -506,12 +506,14 @@ var pollWorkItem = function (workItemId, oauthClient, credentials) {
     return workItemsApi.getWorkItem(workItemId, oauthClient, credentials);
 };
 
+/*
 var asyncLoop = function (o) {
     var loop = function () {
         o.functionToInvoke(loop);
     }
     loop();
 }
+*/
 
 // The function polls the workitem status, in a while loop, 
 // the loop breaks on success or error. 
@@ -531,6 +533,7 @@ function getWorkItemStatus(workitemId, credentials, res, callback) {
             authorization: bearerAccessToken
         }
     };
+    /*
     asyncLoop({
         functionToInvoke: function (loop) {
             setTimeout(function () {
@@ -557,6 +560,34 @@ function getWorkItemStatus(workitemId, credentials, res, callback) {
             }, 2000);
         }
     });
+    */
+    var loopFunction = function (loop) { 
+        // Keep writing to the client to keep the connection alive
+        res.write(' ');
+        console.log('Keeping connection alive...');
+
+        request(options, function (error, status, response) {
+            var result = JSON.parse(response);
+            if (status) {
+                if (result && result.Status === "Pending" || result.Status === "InProgress" ) {
+                    // continue if the status is pending
+                    setTimeout(loopFunction, 2000);
+                } else if (result && result.Status === "Succeeded") {
+                    console.log('Succeeded');
+                    callback(true, result);
+                }
+                else {
+                    console.log('Failed: ' + result.Status);
+                    callback(false, result);
+                }
+            } else {
+                callback(false, result);
+            }
+        });
+    }
+
+    // Start it off
+    loopFunction();
 }
 
 // Helper function to display the report as hyperlink
