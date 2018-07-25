@@ -40,7 +40,7 @@ var ForgePDF = {
     }
     $.post("/autocad.io/submitWorkItem", { "href": href, "projectId": projectId, "itemId": itemId, "session": token, "fileName": fileName })
         .done(function (data) {
-            console.log("Data sent to Design Automation API: " + data);
+            console.log("Data sent to Design Automation API: ", data);
             $('#dataManagementHubs').jstree(true).refresh();
         });
 

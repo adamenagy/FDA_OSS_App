@@ -587,6 +587,7 @@ function getWorkItemStatus(workitemId, credentials, res, callback) {
     }
 
     // Start it off
+    res.set('Content-Type', 'application/json');
     loopFunction();
 }
 
